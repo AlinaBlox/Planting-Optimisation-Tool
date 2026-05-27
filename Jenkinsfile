@@ -13,6 +13,7 @@ pipeline {
                 dir('backend') {
                     bat 'docker compose up -d'
                     bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv sync'
+                    bat 'copy .env.example .env'
                 }
             }
         }
