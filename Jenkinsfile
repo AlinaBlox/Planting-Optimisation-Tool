@@ -12,7 +12,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat 'docker compose up -d'
-                    bat 'python -m uv sync'
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv sync'
                 }
             }
         }
@@ -20,7 +20,7 @@ pipeline {
         stage('Database Migration') {
             steps {
                 dir('backend') {
-                    bat 'python -m uv run dotenv run alembic upgrade head'
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run dotenv run alembic upgrade head'
                 }
             }
         }
