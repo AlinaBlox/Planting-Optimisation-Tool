@@ -26,14 +26,6 @@ pipeline {
             }
         }
 
-        stage('Code Quality') {
-            steps {
-                dir('backend') {
-                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run ruff check src'
-                }
-            }
-        }
-        
         stage('Start API') {
             steps {
                  dir('backend') {
@@ -50,6 +42,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Code Quality') {
+            steps {
+                dir('backend') {
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run ruff check src'
+                }
+            }
+        }
+
+        stage('Security') {
+            steps {
+                dir('backend') {
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run bandit -r src'
+                }   
+            }
+        }
+
     }
 
     post {
