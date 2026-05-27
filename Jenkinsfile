@@ -26,6 +26,14 @@ pipeline {
             }
         }
 
+        stage('Code Quality') {
+            steps {
+                dir('backend') {
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run ruff check src'
+                }
+            }
+        }
+        
         stage('Start API') {
             steps {
                  dir('backend') {
