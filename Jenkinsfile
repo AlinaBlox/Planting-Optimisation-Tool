@@ -26,6 +26,15 @@ pipeline {
             }
         }
 
+        stage('Start API') {
+            steps {
+                dir('backend') {
+                    bat 'start /B "FastAPI" "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py'
+                    bat 'timeout /t 10'
+                }
+             }
+        }
+        
         stage('API Test with Newman') {
             steps {
                 dir('backend') {
