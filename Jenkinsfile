@@ -30,11 +30,11 @@ pipeline {
             steps {
                 dir('backend') {
                     bat 'start /B "FastAPI" "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py'
-                    bat 'timeout /t 10'
+                    bat sleep(time: 10, unit: 'SECONDS')
                 }
              }
         }
-        
+
         stage('API Test with Newman') {
             steps {
                 dir('backend') {
