@@ -9,14 +9,18 @@
   },
   "item": [
     {
-      "name": "http://localhost:8000/openapi.json",
+      "name": "user registration",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 200\", function () {\r",
-              "    pm.response.to.have.status(200);\r",
+              "pm.test(\"Registration successful\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Response contains message\", function () {\r",
+              "    pm.expect(pm.response.text()).to.not.be.empty;\r",
               "});"
             ],
             "type": "text/javascript",
@@ -26,21 +30,944 @@
         }
       ],
       "request": {
-        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
         "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"testuser@example.com\",\r\n    \"name\": \"API Test User\",\r\n    \"password\": \"Testpassword123!\",\r\n    \"role\": \"admin\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
         "url": {
-          "raw": "http://localhost:8000/openapi.json",
+          "raw": "http://localhost:8000/auth/register",
           "protocol": "http",
           "host": [
             "localhost"
           ],
           "port": "8000",
           "path": [
-            "openapi.json"
+            "auth",
+            "register"
           ]
         }
       },
       "response": []
+    },
+    {
+      "name": "create token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\r",
+              "    \"access_token\",\r",
+              "    jsonData.access_token\r",
+              ");\r",
+              "\r",
+              "pm.test(\"Access token saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"access_token\")).to.exist;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "username",
+            "value": "testuser",
+            "type": "text"
+          },
+          {
+            "key": "password",
+            "value": "testuser@example.com",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "username",
+              "value": "testuser123@test.com",
+              "type": "text",
+              "uuid": "ddab425c-035a-409c-81c0-17e6f7013d4e"
+            },
+            {
+              "key": "password",
+              "value": "password123",
+              "type": "text",
+              "uuid": "96851add-ece2-4ab0-884d-bc3dfee1aace"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/auth/token",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "auth",
+            "token"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"User created successfully\", function () {\r",
+              "    pm.response.to.have.status(201);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"user_id\", jsonData.id);\r",
+              "\r",
+              "pm.test(\"user ID saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"user_id\")).to.exist;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"tryagain@example.com\",\r\n    \"name\": \"Test User2\",\r\n    \"password\": \"Password123!\",\r\n    \"role\": \"officer\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/users",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "read user",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/users/{{user_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"User updated successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Updated user ID matches saved user_id\", function () {\r",
+              "    pm.expect(jsonData.id).to.eql(Number(pm.environment.get(\"user_id\")));\r",
+              "});\r",
+              "\r",
+              "pm.test(\"User name was updated\", function () {\r",
+              "    pm.expect(jsonData.name).to.eql(\"Updated Test User\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"User role was updated\", function () {\r",
+              "    pm.expect(jsonData.role).to.eql(\"supervisor\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"tryagain@example.com\",\r\n    \"name\": \"Updated Test User\",\r\n    \"password\": \"Testpassword123!\",\r\n    \"role\": \"supervisor\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/users/{{user_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"User deleted successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Delete response returned\", function () {\r",
+              "    pm.expect(pm.response.text()).to.not.be.empty;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"tryagain@example.com\",\r\n    \"name\": \"Updated Test User\",\r\n    \"password\": \"Testpassword123!\",\r\n    \"role\": \"supervisor\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/users/{{user_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "users",
+            "{{user_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create species",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Species created successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"species_id\", jsonData.id);\r",
+              "\r",
+              "pm.test(\"Species ID saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"species_id\")).to.exist;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"API Test Species\",\r\n    \"common_name\": \"Test Tree\",\r\n    \"rainfall_mm_min\": 200,\r\n    \"rainfall_mm_max\": 500,\r\n    \"temperature_celsius_min\": 10,\r\n    \"temperature_celsius_max\": 30,\r\n    \"elevation_m_min\": 0,\r\n    \"elevation_m_max\": 1000,\r\n    \"ph_min\": 4,\r\n    \"ph_max\": 6.5,\r\n    \"coastal\": false,\r\n    \"riparian\": false,\r\n    \"nitrogen_fixing\": true,\r\n    \"shade_tolerant\": true,\r\n    \"bank_stabilising\": false,\r\n    \"soil_textures\": [1],\r\n    \"agroforestry_types\": [1]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/species",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "species"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "read species",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/species",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "species"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update species",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Species updated successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Species ID matches saved ID\", function () {\r",
+              "    pm.expect(jsonData.id).to.eql(Number(pm.environment.get(\"species_id\")));\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Species name was updated\", function () {\r",
+              "    pm.expect(jsonData.name).to.eql(\"API Test Species Updated\");\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Common name was updated\", function () {\r",
+              "    pm.expect(jsonData.common_name).to.eql(\"Updated Test Tree\");\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"API Test Species Updated\",\r\n    \"common_name\": \"Updated Test Tree\",\r\n    \"rainfall_mm_min\": 250,\r\n    \"rainfall_mm_max\": 600,\r\n    \"temperature_celsius_min\": 12,\r\n    \"temperature_celsius_max\": 32,\r\n    \"elevation_m_min\": 0,\r\n    \"elevation_m_max\": 1200,\r\n    \"ph_min\": 4.5,\r\n    \"ph_max\": 7,\r\n    \"coastal\": false,\r\n    \"riparian\": true,\r\n    \"nitrogen_fixing\": true,\r\n    \"shade_tolerant\": true,\r\n    \"bank_stabilising\": true,\r\n    \"soil_textures\": [1],\r\n    \"agroforestry_types\": [1]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/species/{{species_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "species",
+            "{{species_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete species",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Species deleted successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/species/{{species_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "species",
+            "{{species_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create parameter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Parameter created successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"parameter_id\", jsonData.id);\r",
+              "\r",
+              "pm.test(\"Parameter ID saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"parameter_id\")).to.exist;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"species_id\": {{species_id}},\r\n    \"feature\": \"rainfall\",\r\n    \"score_method\": \"trapezoidal\",\r\n    \"weight\": 1,\r\n    \"trap_left_tol\": 500,\r\n    \"trap_right_tol\": 500\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/parameters",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "parameters"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "read parameter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Parameter retrieved successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Parameter ID matches saved ID\", function () {\r",
+              "    pm.expect(jsonData.id).to.eql(Number(pm.environment.get(\"parameter_id\")));\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/parameters/{{parameter_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "parameters",
+            "{{parameter_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update parameter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Parameter updated successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Parameter ID matches saved ID\", function () {\r",
+              "    pm.expect(jsonData.id).to.eql(Number(pm.environment.get(\"parameter_id\")));\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Parameter weight updated\", function () {\r",
+              "    pm.expect(jsonData.weight).to.eql(2);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"species_id\":1, \r\n    \"feature\": \"rainfall_updated\",\r\n    \"score_method\": \"trapezoidal\",\r\n    \"weight\": 1,\r\n    \"trap_left_tol\": 5000,\r\n    \"trap_right_tol\": 5000\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/parameters/{{parameter_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "parameters",
+            "{{parameter_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete parameter",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Parameter deleted successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/parameters/{{parameter_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "parameters",
+            "{{parameter_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "create farm",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Farm created successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"farm_id\", jsonData.id);\r",
+              "pm.environment.set(\"farm_external_id\", jsonData.external_id);\r",
+              "\r",
+              "pm.test(\"Farm ID saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"farm_id\")).to.exist;\r",
+              "});\r",
+              "\r",
+              "pm.test(\"Farm External ID saved\", function () {\r",
+              "    pm.expect(pm.environment.get(\"farm_external_id\")).to.exist;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"rainfall_mm\": 500,\r\n  \"temperature_celsius\": 25,\r\n  \"elevation_m\": 50,\r\n  \"ph\": 6,\r\n  \"soil_texture_id\": 3,\r\n  \"area_ha\": 100,\r\n  \"latitude\": -19.2589,\r\n  \"longitude\": 146.8169,\r\n  \"coastal\": true,\r\n  \"riparian\": true,\r\n  \"nitrogen_fixing\": true,\r\n  \"shade_tolerant\": true,\r\n  \"bank_stabilising\": true,\r\n  \"slope\": 10,\r\n  \"agroforestry_type_ids\": [4],\r\n  \"external_id\": 51638\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/farms",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "farms"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "read farms",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Farm retrieved successfully\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "const jsonData = pm.response.json();\r",
+              "\r",
+              "pm.test(\"Farm ID matches saved ID\", function () {\r",
+              "    pm.expect(jsonData.id).to.eql(Number(pm.environment.get(\"farm_id\")));\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8000/farms/{{farm_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "farms",
+            "{{farm_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update farm",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"rainfall_mm\": 600,\r\n    \"temperature_celsius\": 26,\r\n    \"elevation_m\": 60,\r\n    \"ph\": 6.5,\r\n    \"soil_texture_id\": 3,\r\n    \"area_ha\": 80,\r\n    \"latitude\": -19.2589,\r\n    \"longitude\": 146.8169,\r\n    \"coastal\": true,\r\n    \"riparian\": true,\r\n    \"nitrogen_fixing\": true,\r\n    \"shade_tolerant\": true,\r\n    \"bank_stabilising\": true,\r\n    \"slope\": 12,\r\n    \"agroforestry_type_ids\": [4],\r\n    \"external_id\": {{farm_external_id}}\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8000/farms/{{farm_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "farms",
+            "{{farm_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "access_token",
+      "value": ""
     }
   ]
 }
