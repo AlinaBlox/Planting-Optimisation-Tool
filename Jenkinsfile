@@ -1,13 +1,6 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out repository from GitHub'
-            }
-        }
-
         stage('Build') {
             steps {
                 dir('backend') {
@@ -18,7 +11,7 @@ pipeline {
             }
         }
 
-        stage('Database Migration') {
+        stage('Database') {
             steps {
                 dir('backend') {
                     bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run dotenv run alembic upgrade head'
@@ -34,6 +27,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Stop Existing API') {
+            steps {
+                dir('backend') {
+                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" src\\scripts\\kill-api.py'
+                }
+            }
+        }
+
         stage('Start API') {
             steps {
                  dir('backend') {
@@ -42,7 +44,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('API Test with Newman') {
             steps {
                 dir('backend') {
