@@ -34,7 +34,15 @@ pipeline {
                 }
             }
         }
-
+        stage('Seed Test Data') {
+            steps {
+                dir('backend') {
+                    bat 'set PYTHONPATH=.&& "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\create_test_user.py'
+                    bat 'set PYTHONPATH=.&& "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\seed_references.py'
+                }
+            }
+        }
+        
         stage('API Test with Newman') {
             steps {
                 dir('backend') {
