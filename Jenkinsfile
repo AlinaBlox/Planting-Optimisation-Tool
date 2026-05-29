@@ -31,10 +31,8 @@ pipeline {
 
         stage('Start API') {
             steps {
-                 dir('backend') {
-                    bat 'start "" cmd /c "set PYTHONPATH=. && C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 > api.log 2>&1"'
-                    sleep(time: 20, unit: 'SECONDS')
-                    bat 'type api.log'
+                dir('backend') {
+                    bat 'set PYTHONPATH=. && "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000'
                 }
             }
         }
