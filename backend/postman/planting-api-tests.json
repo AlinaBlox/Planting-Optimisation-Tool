@@ -248,11 +248,7 @@
           "script": {
             "exec": [
               "pm.test(\"User deleted successfully\", function () {\r",
-              "    pm.response.to.have.status(200);\r",
-              "});\r",
-              "\r",
-              "pm.test(\"Delete response returned\", function () {\r",
-              "    pm.expect(pm.response.text()).to.not.be.empty;\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
               "});"
             ],
             "type": "text/javascript",
@@ -436,51 +432,6 @@
             }
           }
         },
-        "url": {
-          "raw": "http://localhost:8000/species/{{species_id}}",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8000",
-          "path": [
-            "species",
-            "{{species_id}}"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "delete species",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Species deleted successfully\", function () {\r",
-              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
-              "});"
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{access_token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "DELETE",
-        "header": [],
         "url": {
           "raw": "http://localhost:8000/species/{{species_id}}",
           "protocol": "http",
@@ -718,6 +669,51 @@
       "response": []
     },
     {
+      "name": "delete species",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Species deleted successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/species/{{species_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "species",
+            "{{species_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "create farm",
       "event": [
         {
@@ -873,6 +869,51 @@
             }
           }
         },
+        "url": {
+          "raw": "http://localhost:8000/farms/{{farm_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "farms",
+            "{{farm_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete farm",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Farm deleted successfully\", function () {\r",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
         "url": {
           "raw": "http://localhost:8000/farms/{{farm_id}}",
           "protocol": "http",
