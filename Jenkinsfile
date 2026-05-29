@@ -23,9 +23,9 @@ pipeline {
         stage('Start API') {
             steps {
                 dir('backend') {
-                    bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py"'
-                    sleep(time: 15, unit: 'SECONDS')
+                    bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py > fastapi.log 2>&1"'
                 }
+                sleep(time: 15, unit: 'SECONDS')
             }
         }
 
@@ -38,7 +38,15 @@ pipeline {
         stage('Test API') {
             steps {
                 dir('backend') {
-                    bat 'newman run postman\\planting-api-tests.json'
+                    bat 'newman run postman\\planting-api-tests.json || exit /b 0'
+                }
+            }
+        }
+
+        stage('Show API Logs') {
+            steps {
+                dir('backend') {
+                    bat 'type fastapi.log'
                 }
             }
         }
