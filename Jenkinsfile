@@ -7,7 +7,7 @@ pipeline {
                 dir('backend') {
                     bat 'docker compose up -d'
                     bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv sync'
-                    bat 'copy .env.example .env'
+                    bat 'if not exist .env copy .env.example .env'
                 }
             }
         }
@@ -20,24 +20,22 @@ pipeline {
             }
         }
 
-        stage('Seed Test Data') {
-            steps {
-                dir('backend') {
-                    bat 'set PYTHONPATH=. && "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\create_test_user.py'
-                    bat 'set PYTHONPATH=.&& "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\seed_references.py'
-                }
-            }
-        }
-
         stage('Start API') {
             steps {
                 dir('backend') {
-                    bat 'set PYTHONPATH=. && "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000'
+                    bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py"'
+                    bat 'timeout /t 15'
                 }
             }
         }
 
-        stage('API Test with Newman') {
+        stage('Check API') {
+            steps {
+                bat 'curl http://localhost:8000/docs'
+            }
+        }
+
+        stage('Test API') {
             steps {
                 dir('backend') {
                     bat 'newman run postman\\planting-api-tests.json'
@@ -60,7 +58,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
@@ -70,4 +67,4 @@ pipeline {
             }
         }
     }
-}    
+}
