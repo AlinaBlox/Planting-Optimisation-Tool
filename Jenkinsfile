@@ -29,14 +29,6 @@ pipeline {
             }
         }
 
-        stage('Stop Existing API') {
-            steps {
-                dir('backend') {
-                    bat '"C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" src\\scripts\\kill-api.py'
-                }
-            }
-        }
-
         stage('Start API') {
             steps {
                  dir('backend') {
