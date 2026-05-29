@@ -23,7 +23,7 @@ pipeline {
         stage('Start API') {
             steps {
                 dir('backend') {
-                    bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py > fastapi.log 2>&1"'
+                    bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 > fastapi.log 2>&1"'
                 }
                 sleep(time: 15, unit: 'SECONDS')
             }
