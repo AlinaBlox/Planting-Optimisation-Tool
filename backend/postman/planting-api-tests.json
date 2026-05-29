@@ -577,7 +577,7 @@
               "});\r",
               "\r",
               "pm.test(\"Parameter weight updated\", function () {\r",
-              "    pm.expect(jsonData.weight).to.eql(2);\r",
+              "    pm.expect(jsonData.weight).to.eql(1);\r",
               "});"
             ],
             "type": "text/javascript",
@@ -763,7 +763,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"rainfall_mm\": 500,\r\n  \"temperature_celsius\": 25,\r\n  \"elevation_m\": 50,\r\n  \"ph\": 6,\r\n  \"soil_texture_id\": 3,\r\n  \"area_ha\": 100,\r\n  \"latitude\": -19.2589,\r\n  \"longitude\": 146.8169,\r\n  \"coastal\": true,\r\n  \"riparian\": true,\r\n  \"nitrogen_fixing\": true,\r\n  \"shade_tolerant\": true,\r\n  \"bank_stabilising\": true,\r\n  \"slope\": 10,\r\n  \"agroforestry_type_ids\": [4],\r\n  \"external_id\": 51638\r\n}",
+          "raw": "{\r\n  \"rainfall_mm\": 500,\r\n  \"temperature_celsius\": 25,\r\n  \"elevation_m\": 50,\r\n  \"ph\": 6,\r\n  \"soil_texture_id\": 3,\r\n  \"area_ha\": 100,\r\n  \"latitude\": -19.2589,\r\n  \"longitude\": 146.8169,\r\n  \"coastal\": true,\r\n  \"riparian\": true,\r\n  \"nitrogen_fixing\": true,\r\n  \"shade_tolerant\": true,\r\n  \"bank_stabilising\": true,\r\n  \"slope\": 10,\r\n  \"agroforestry_type_ids\": [4],\r\n  \"external_id\": {{$randomInt}}\r\n}",
           "options": {
             "raw": {
               "language": "json"
