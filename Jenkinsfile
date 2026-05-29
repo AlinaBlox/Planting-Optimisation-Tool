@@ -23,7 +23,6 @@ pipeline {
         stage('Seed Test Data') {
             steps {
                 dir('backend') {
-                    bat 'set PYTHONPATH=.&& "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\create_test_user.py'
                     bat 'set PYTHONPATH=.&& "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run python src\\scripts\\seed_references.py'
                 }
             }
@@ -32,8 +31,9 @@ pipeline {
         stage('Start API') {
             steps {
                  dir('backend') {
-                    bat 'start /B "" "C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py'
-                    sleep(time: 10, unit: 'SECONDS')
+                    bat 'start "" cmd /c "set PYTHONPATH=. && C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -m uv run fastapi dev src/main.py > api.log 2>&1"'
+                    sleep(time: 20, unit: 'SECONDS')
+                    bat 'type api.log'
                 }
             }
         }
