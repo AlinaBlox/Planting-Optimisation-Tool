@@ -24,7 +24,7 @@ pipeline {
             steps {
                 dir('backend') {
                     bat 'start "FastAPI" cmd /c ""C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe" -m uv run fastapi dev src/main.py"'
-                    bat 'timeout /t 15'
+                    sleep(time: 15, unit: 'SECONDS')
                 }
             }
         }
