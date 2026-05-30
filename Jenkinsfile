@@ -14,7 +14,7 @@ pipeline {
         stage('Build') {
             steps {
                 dir('backend') {
-                    bat 'if not exist .env copy .env.example .env'
+                    bat 'copy .env.example .env /Y'
                     bat '"%PYTHON%" -m uv sync'
                     bat 'docker compose up -d'
                 }
