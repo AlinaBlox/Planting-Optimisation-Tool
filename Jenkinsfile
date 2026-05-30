@@ -102,8 +102,7 @@ pipeline {
             steps {
                 bat 'docker stop planting-staging || exit /b 0'
                 bat 'docker rm   planting-staging || exit /b 0'
-                // Pass the .env file so the container has database credentials
-                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --env-file backend/.env %BUILD_TAG%'
+                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --env-file backend/.env --network backend_default %BUILD_TAG%'
                 sleep(time: 15, unit: 'SECONDS')
                 bat 'curl -f http://localhost:%STAGING_PORT%/docs'
                 echo "Deployed build ${BUILD_NUMBER} to staging on port ${STAGING_PORT}"
@@ -115,7 +114,7 @@ pipeline {
                 bat 'docker tag %BUILD_TAG% planting-api:latest'
                 bat 'docker stop planting-prod || exit /b 0'
                 bat 'docker rm   planting-prod || exit /b 0'
-                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --env-file backend/.env planting-api:latest'
+                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --env-file backend/.env --network backend_default planting-api:latest'
                 sleep(time: 15, unit: 'SECONDS')
                 bat 'curl -f http://localhost:%PROD_PORT%/docs'
                 echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
@@ -137,20 +136,25 @@ pipeline {
     }
 
     post {
-        success {
-            echo "Pipeline SUCCESS - Build ${BUILD_NUMBER} deployed and healthy on port ${PROD_PORT}"
-        }
-        failure {
-            echo "Pipeline FAILED on build ${BUILD_NUMBER} - check stage logs above"
-        }
-        always {
-            // Tear down local dev containers
-            dir('backend') {
-                bat 'docker compose down || exit /b 0'
-            }
-            // Clean up staging container (prod stays running)
-            bat 'docker stop planting-staging || exit /b 0'
-            bat 'docker rm   planting-staging || exit /b 0'
+    success {
+        echo "Pipeline SUCCESS - Build ${BUILD_NUMBER} deployed and healthy on port ${PROD_PORT}"
+    }
+    failure {
+        echo "Pipeline FAILED on build ${BUILD_NUMBER} - check stage logs above"
+    }
+    always {
+        // Kill background uvicorn process
+        bat 'powershell -Command "Get-Process -Name python -ErrorAction SilentlyContinue | Stop-Process -Force" || exit /b 0'
+        // Stop staging container
+        bat 'docker stop planting-staging || exit /b 0'
+        bat 'docker rm   planting-staging || exit /b 0'
+        // Stop prod container
+        bat 'docker stop planting-prod || exit /b 0'
+        bat 'docker rm   planting-prod || exit /b 0'
+        // Tear down database last, after all containers are done
+        dir('backend') {
+            bat 'docker compose down || exit /b 0'
         }
     }
+}
 }
