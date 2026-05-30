@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         PYTHON       = 'C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe'
+        PYTHONIOENCODING  = 'utf-8'
         BUILD_TAG    = "planting-api:build-${BUILD_NUMBER}"
         STAGING_PORT = '8001'
         PROD_PORT    = '8002'
@@ -38,7 +39,9 @@ pipeline {
             steps {
                 // Start API locally for Newman tests
                 dir('backend') {
-                    bat 'start "FastAPI" cmd /c ""%PYTHON%" -m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000 > fastapi.log 2>&1"'
+                    bat '''
+                        powershell -Command "& { $env:PYTHONIOENCODING='utf-8'; Start-Process -FilePath '%PYTHON%' -ArgumentList '-m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000' -RedirectStandardOutput fastapi.log -RedirectStandardError fastapi-err.log -NoNewWindow }"
+                    '''
                 }
                 sleep(time: 15, unit: 'SECONDS')
 
