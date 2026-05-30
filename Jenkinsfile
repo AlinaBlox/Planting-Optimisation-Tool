@@ -102,24 +102,23 @@ pipeline {
             steps {
                 bat 'docker stop planting-staging || exit /b 0'
                 bat 'docker rm   planting-staging || exit /b 0'
-                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --env-file backend/.env --network backend_default %BUILD_TAG%'
+                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --network backend_default --env-file backend/.env -e DATABASE_URL=postgresql+asyncpg://postgres:devpassword@pot_postgres_db:5432/POT_db -e REDIS_URL=redis://pot_redis:6379 -e POSTGRES_HOST=pot_postgres_db %BUILD_TAG%'
                 sleep(time: 15, unit: 'SECONDS')
-                // Print container logs before curl so we can see any startup errors
                 bat 'docker logs planting-staging'
                 bat 'curl -f http://localhost:%STAGING_PORT%/docs'
                 echo "Deployed build ${BUILD_NUMBER} to staging on port ${STAGING_PORT}"
             }
         }
 
-        stage('Release') {
+    stage('Release') {
             steps {
                 bat 'docker tag %BUILD_TAG% planting-api:latest'
-                bat 'docker stop planting-prod || exit /b 0'
-                bat 'docker rm   planting-prod || exit /b 0'
-                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --env-file backend/.env --network backend_default planting-api:latest'
-                sleep(time: 15, unit: 'SECONDS')
-                bat 'curl -f http://localhost:%PROD_PORT%/docs'
-                echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
+            bat 'docker stop planting-prod || exit /b 0'
+            bat 'docker rm   planting-prod || exit /b 0'
+            bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --network backend_default --env-file backend/.env -e DATABASE_URL=postgresql+asyncpg://postgres:devpassword@pot_postgres_db:5432/POT_db -e REDIS_URL=redis://pot_redis:6379 -e POSTGRES_HOST=pot_postgres_db planting-api:latest'
+            sleep(time: 15, unit: 'SECONDS')
+            bat 'curl -f http://localhost:%PROD_PORT%/docs'
+            echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
             }
         }
 
