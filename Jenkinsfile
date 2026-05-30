@@ -127,13 +127,13 @@ pipeline {
         }
         always {
             bat 'powershell -Command "Get-Process -Name python -ErrorAction SilentlyContinue | Stop-Process -Force" || exit /b 0'
-            bat 'docker stop planting-staging || exit /b 0'
-            bat 'docker rm   planting-staging || exit /b 0'
-            bat 'docker stop planting-prod || exit /b 0'
-            bat 'docker rm   planting-prod || exit /b 0'
-            dir('backend') {
-                bat 'docker compose down || exit /b 0'
-            }
+            //bat 'docker stop planting-staging || exit /b 0'
+            //bat 'docker rm   planting-staging || exit /b 0'
+            //bat 'docker stop planting-prod || exit /b 0'
+            //bat 'docker rm   planting-prod || exit /b 0'
+            //dir('backend') {
+            //    bat 'docker compose down || exit /b 0'
+            //}
         }
     }
 }
