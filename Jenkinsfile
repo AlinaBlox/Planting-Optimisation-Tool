@@ -104,6 +104,8 @@ pipeline {
                 bat 'docker rm   planting-staging || exit /b 0'
                 bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --env-file backend/.env --network backend_default %BUILD_TAG%'
                 sleep(time: 15, unit: 'SECONDS')
+                // Print container logs before curl so we can see any startup errors
+                bat 'docker logs planting-staging'
                 bat 'curl -f http://localhost:%STAGING_PORT%/docs'
                 echo "Deployed build ${BUILD_NUMBER} to staging on port ${STAGING_PORT}"
             }
