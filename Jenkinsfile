@@ -100,13 +100,11 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                // Clean up any previous staging container
                 bat 'docker stop planting-staging || exit /b 0'
                 bat 'docker rm   planting-staging || exit /b 0'
-                // Container exposes 8080 (Dockerfile default PORT), map to STAGING_PORT on host
-                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 %BUILD_TAG%'
-                sleep(time: 10, unit: 'SECONDS')
-                // Verify staging is healthy
+                // Pass the .env file so the container has database credentials
+                bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --env-file backend/.env %BUILD_TAG%'
+                sleep(time: 15, unit: 'SECONDS')
                 bat 'curl -f http://localhost:%STAGING_PORT%/docs'
                 echo "Deployed build ${BUILD_NUMBER} to staging on port ${STAGING_PORT}"
             }
@@ -114,15 +112,11 @@ pipeline {
 
         stage('Release') {
             steps {
-                // Tag this build as latest for production
                 bat 'docker tag %BUILD_TAG% planting-api:latest'
-                // Clean up any previous prod container
                 bat 'docker stop planting-prod || exit /b 0'
                 bat 'docker rm   planting-prod || exit /b 0'
-                // Promote to production port
-                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 planting-api:latest'
-                sleep(time: 10, unit: 'SECONDS')
-                // Verify production is healthy
+                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --env-file backend/.env planting-api:latest'
+                sleep(time: 15, unit: 'SECONDS')
                 bat 'curl -f http://localhost:%PROD_PORT%/docs'
                 echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
             }
