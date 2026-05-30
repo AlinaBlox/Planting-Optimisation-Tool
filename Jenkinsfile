@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-        PYTHON       = 'C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe'
-        PYTHONIOENCODING  = 'utf-8'
-        BUILD_TAG    = "planting-api:build-${BUILD_NUMBER}"
-        STAGING_PORT = '8001'
-        PROD_PORT    = '8002'
+        PYTHON           = 'C:\\Users\\brune\\AppData\\Local\\Programs\\Python\\Python314\\python.exe'
+        PYTHONIOENCODING = 'utf-8'
+        BUILD_TAG        = "planting-api:build-${BUILD_NUMBER}"
+        STAGING_PORT     = '8001'
+        PROD_PORT        = '8002'
     }
 
     stages {
@@ -18,7 +18,6 @@ pipeline {
                     bat '"%PYTHON%" -m uv sync'
                     bat 'docker compose up -d'
                 }
-                // Build context must be project root - Dockerfile references gis/ and datascience/
                 bat 'docker build -f backend/Dockerfile -t %BUILD_TAG% .'
                 dir('frontend') {
                     bat 'npm install'
@@ -37,23 +36,16 @@ pipeline {
 
         stage('Test') {
             steps {
-                // Start API locally for Newman tests
                 dir('backend') {
                     bat '''
                         powershell -Command "& { $env:PYTHONIOENCODING='utf-8'; Start-Process -FilePath '%PYTHON%' -ArgumentList '-m uv run uvicorn src.main:app --host 127.0.0.1 --port 8000' -RedirectStandardOutput fastapi.log -RedirectStandardError fastapi-err.log -NoNewWindow }"
                     '''
                 }
                 sleep(time: 15, unit: 'SECONDS')
-
-                // Verify API is up before running tests
                 bat 'curl -f http://localhost:8000/docs'
-
-                // Backend API tests - failure here fails the pipeline
                 dir('backend') {
                     bat 'newman run postman\\planting-api-tests.json'
                 }
-
-                // Frontend unit tests - vitest run exits non-zero on failure
                 dir('frontend') {
                     bat 'npx vitest run'
                 }
@@ -69,29 +61,22 @@ pipeline {
 
         stage('Code Quality') {
             steps {
-                // Python linting
                 dir('backend') {
                     bat '"%PYTHON%" -m uv run ruff check src'
                 }
-                // Frontend script linting
                 dir('frontend') {
                     bat 'npm run lint:scripts || exit /b 0'
-                }
-                // Frontend style linting
-                dir('frontend') {
-                    bat 'npm run lint:styles || exit /b 0'
+                    bat 'npm run lint:styles  || exit /b 0'
                 }
             }
         }
 
         stage('Security') {
             steps {
-                // Python security scan - Bandit
                 dir('backend') {
                     bat '"%PYTHON%" -m uv run bandit -r src -f txt -o bandit-report.txt || exit /b 0'
                     bat 'type bandit-report.txt'
                 }
-                // Frontend dependency vulnerability audit
                 dir('frontend') {
                     bat 'npm audit --audit-level=high || exit /b 0'
                 }
@@ -104,58 +89,51 @@ pipeline {
                 bat 'docker rm   planting-staging || exit /b 0'
                 bat 'docker run -d --name planting-staging -p %STAGING_PORT%:8080 --network backend_default --env-file backend/.env -e DATABASE_URL=postgresql+asyncpg://postgres:devpassword@pot_postgres_db:5432/POT_db -e REDIS_URL=redis://pot_redis:6379 -e POSTGRES_HOST=pot_postgres_db %BUILD_TAG%'
                 sleep(time: 15, unit: 'SECONDS')
-                bat 'docker logs planting-staging'
                 bat 'curl -f http://localhost:%STAGING_PORT%/docs'
                 echo "Deployed build ${BUILD_NUMBER} to staging on port ${STAGING_PORT}"
             }
         }
 
-    stage('Release') {
+        stage('Release') {
             steps {
                 bat 'docker tag %BUILD_TAG% planting-api:latest'
-            bat 'docker stop planting-prod || exit /b 0'
-            bat 'docker rm   planting-prod || exit /b 0'
-            bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --network backend_default --env-file backend/.env -e DATABASE_URL=postgresql+asyncpg://postgres:devpassword@pot_postgres_db:5432/POT_db -e REDIS_URL=redis://pot_redis:6379 -e POSTGRES_HOST=pot_postgres_db planting-api:latest'
-            sleep(time: 15, unit: 'SECONDS')
-            bat 'curl -f http://localhost:%PROD_PORT%/docs'
-            echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
+                bat 'docker stop planting-prod || exit /b 0'
+                bat 'docker rm   planting-prod || exit /b 0'
+                bat 'docker run -d --name planting-prod -p %PROD_PORT%:8080 --network backend_default --env-file backend/.env -e DATABASE_URL=postgresql+asyncpg://postgres:devpassword@pot_postgres_db:5432/POT_db -e REDIS_URL=redis://pot_redis:6379 -e POSTGRES_HOST=pot_postgres_db planting-api:latest'
+                sleep(time: 15, unit: 'SECONDS')
+                bat 'curl -f http://localhost:%PROD_PORT%/docs'
+                echo "Released build ${BUILD_NUMBER} to production on port ${PROD_PORT}"
             }
         }
 
         stage('Monitoring') {
             steps {
-                // Run 3 health checks against production with a 5 second gap between each
-                bat '''
-                    for /L %%i in (1,1,3) do (
-                        curl -f http://localhost:%PROD_PORT%/docs && echo Health check %%i passed || echo Health check %%i FAILED
-                        timeout /t 5 /nobreak
-                    )
-                '''
+                bat 'curl -f http://localhost:%PROD_PORT%/docs && echo Health check 1 passed || echo Health check 1 FAILED'
+                sleep(time: 5, unit: 'SECONDS')
+                bat 'curl -f http://localhost:%PROD_PORT%/docs && echo Health check 2 passed || echo Health check 2 FAILED'
+                sleep(time: 5, unit: 'SECONDS')
+                bat 'curl -f http://localhost:%PROD_PORT%/docs && echo Health check 3 passed || echo Health check 3 FAILED'
                 echo "Monitoring complete - build ${BUILD_NUMBER} is live on port ${PROD_PORT}"
             }
         }
     }
 
     post {
-    success {
-        echo "Pipeline SUCCESS - Build ${BUILD_NUMBER} deployed and healthy on port ${PROD_PORT}"
-    }
-    failure {
-        echo "Pipeline FAILED on build ${BUILD_NUMBER} - check stage logs above"
-    }
-    always {
-        // Kill background uvicorn process
-        bat 'powershell -Command "Get-Process -Name python -ErrorAction SilentlyContinue | Stop-Process -Force" || exit /b 0'
-        // Stop staging container
-        bat 'docker stop planting-staging || exit /b 0'
-        bat 'docker rm   planting-staging || exit /b 0'
-        // Stop prod container
-        bat 'docker stop planting-prod || exit /b 0'
-        bat 'docker rm   planting-prod || exit /b 0'
-        // Tear down database last, after all containers are done
-        dir('backend') {
-            bat 'docker compose down || exit /b 0'
+        success {
+            echo "Pipeline SUCCESS - Build ${BUILD_NUMBER} deployed and healthy on port ${PROD_PORT}"
+        }
+        failure {
+            echo "Pipeline FAILED on build ${BUILD_NUMBER} - check stage logs above"
+        }
+        always {
+            bat 'powershell -Command "Get-Process -Name python -ErrorAction SilentlyContinue | Stop-Process -Force" || exit /b 0'
+            bat 'docker stop planting-staging || exit /b 0'
+            bat 'docker rm   planting-staging || exit /b 0'
+            bat 'docker stop planting-prod || exit /b 0'
+            bat 'docker rm   planting-prod || exit /b 0'
+            dir('backend') {
+                bat 'docker compose down || exit /b 0'
+            }
         }
     }
-}
 }
